@@ -1,0 +1,57 @@
+#!/bin/bash
+# search
+
+# Stop on errors
+# See https://vaneyckt.io/posts/safer_bash_scripts_with_set_euxo_pipefail/
+set -Eeuo pipefail
+
+# Sanity check command line options
+usage() {
+  echo "Usage: $0 (start|stop|restart)"
+}
+
+if [ $# -ne 1 ]; then
+  usage
+  exit 1
+fi
+
+# Parse argument.  $1 is the first argument
+case $1 in
+  "start")
+    echo "starting search server ..."
+    # export FLASK_DEBUG=True
+    export FLASK_APP=search
+    # export SEARCH_SETTINGS=config.py
+    if pgrep -f 'flask run --host 0.0.0.0 --port 8000' &> /dev/null
+    then
+      echo "Error: a process is already using port 8000"
+      exit 1
+    fi
+    flask run --host 0.0.0.0 --port 8000 &> /dev/null &
+    ;;
+
+  "stop")
+    if pgrep -af 'flask run --host 0.0.0.0 --port 8000' &> /dev/null
+    then
+      echo "stopping search server ..."
+      pkill -f 'flask run --host 0.0.0.0 --port 8000'
+    fi
+    ;;
+
+  "restart")
+    if pgrep -af 'flask run --host 0.0.0.0 --port 8000' &> /dev/null
+    then
+      echo "stopping search server ..."
+      pkill -f 'flask run --host 0.0.0.0 --port 8000'
+    fi
+    echo "starting search server ..."
+    export FLASK_APP=search
+    flask run --host 0.0.0.0 --port 8000 &> /dev/null &
+    ;;
+
+  *)
+    usage
+    exit 1
+    ;;
+esac
+
